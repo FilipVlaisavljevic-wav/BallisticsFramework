@@ -4,13 +4,13 @@ public class ReticleHUD : MonoBehaviour
 {
     [Header("Reference")]
     public WeaponController weapon;
-    public FirstPersonController controller;   // za skrivanje crosshaira u ADS-u
+    public FirstPersonController controller;   
 
     [Header("Crosshair")]
     public Color color = new Color(1f, 1f, 1f, 0.9f);
-    public float length = 10f;     // duljina svake crtice
-    public float thickness = 2f;   // debljina
-    public float gap = 6f;         // razmak od centra
+    public float length = 10f;    
+    public float thickness = 2f;   
+    public float gap = 6f;        
     public bool centerDot = true;
     public float dotSize = 2f;
 

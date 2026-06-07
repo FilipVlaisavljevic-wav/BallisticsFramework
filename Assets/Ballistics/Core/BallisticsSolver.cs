@@ -34,12 +34,13 @@ public static class BallisticsSolver
         // Pre-izračunaj atmosferske vrijednosti — iste su tijekom svih 4 RK4 sub-koraka
         float airDensity   = atmosphere.GetAirDensity();
         float speedOfSound = atmosphere.SpeedOfSound;
+        Vector3 wind = atmosphere.Wind;
 
         // Četiri uzorka derivacije
-        Derivative k1 = Evaluate(state,                          projectile, airDensity, speedOfSound);
-        Derivative k2 = Evaluate(Apply(state, k1, dt * 0.5f),    projectile, airDensity, speedOfSound);
-        Derivative k3 = Evaluate(Apply(state, k2, dt * 0.5f),    projectile, airDensity, speedOfSound);
-        Derivative k4 = Evaluate(Apply(state, k3, dt),           projectile, airDensity, speedOfSound);
+        Derivative k1 = Evaluate(state,                          projectile, airDensity, speedOfSound, wind);
+        Derivative k2 = Evaluate(Apply(state, k1, dt * 0.5f),    projectile, airDensity, speedOfSound, wind);
+        Derivative k3 = Evaluate(Apply(state, k2, dt * 0.5f),    projectile, airDensity, speedOfSound, wind);
+        Derivative k4 = Evaluate(Apply(state, k3, dt),           projectile, airDensity, speedOfSound, wind);
 
         // Ponderirani prosjek (1, 2, 2, 1) / 6
         Vector3 dPos = (k1.dPosition + 2f * k2.dPosition + 2f * k3.dPosition + k4.dPosition) / 6f;
@@ -60,30 +61,26 @@ public static class BallisticsSolver
 
     private static Derivative Evaluate(
      ProjectileState state, ProjectileData projectile,
-     float airDensity, float speedOfSound)
+     float airDensity, float speedOfSound, Vector3 wind)
     {
         Vector3 dragAccel = Vector3.zero;
-        float speed = state.Speed;
 
-        if (speed > 0.01f)
+        Vector3 vRel = state.Velocity - wind;
+        float speedRel = vRel.magnitude;
+
+        if (speedRel > 0.01f)
         {
-            float mach = speed / speedOfSound;
-
+            float mach = speedRel / speedOfSound;                
             float refCd = DragModel.LookupReferenceCd(mach, projectile.dragModel);
-
-            // Komercijalni BC (lbs/in²) → SI (kg/m²)
             float bcMetric = projectile.ballisticCoefficient * 703.069f;
 
-            // Direktna formula: a = (π · ρ · v² · Cd_ref) / (8 · BC_metric)
-            float dragAccelMag = (Mathf.PI * airDensity * speed * speed * refCd) / (8f * bcMetric);
-
-            dragAccel = -(state.Velocity / speed) * dragAccelMag;
-
+            float dragAccelMag = (Mathf.PI * airDensity * speedRel * speedRel * refCd) / (8f * bcMetric);
+            dragAccel = -(vRel / speedRel) * dragAccelMag;   
         }
 
         return new Derivative
         {
-            dPosition = state.Velocity,
+            dPosition = state.Velocity,        // pozicija se i dalje miče po brzini PO TLU
             dVelocity = GRAVITY + dragAccel
         };
     }

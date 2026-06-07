@@ -8,6 +8,9 @@ public class BallisticsManager : MonoBehaviour
     public float pressurePascal = 101325f;
     public float humidityPercent = 50f;
 
+    [Header("Vjetar")]
+    public Vector3 windMetresPerSecond = Vector3.zero;
+
     [Header("Simulacija")]
     public float timestep = 0.01f;
     public float maxFlightTime = 30f;
@@ -17,10 +20,9 @@ public class BallisticsManager : MonoBehaviour
     public float bulletRadius = 0.1f;
     public float trailWidth = 0.05f;
     public float impactMarkerRadius = 0.15f;
-    public Color impactColor = Color.yellow;
 
     private readonly List<LiveProjectile> _active = new();
-    private readonly List<GameObject> _persistent = new();   // tragovi + oznake (za Clear)
+    private readonly List<GameObject> _persistent = new();   
     public readonly List<ImpactInfo> Impacts = new();
 
     public struct ImpactInfo
@@ -35,7 +37,7 @@ public class BallisticsManager : MonoBehaviour
     {
         public ProjectileState State;
         public ProjectileData Data;
-        public AtmosphereModel Atmosphere;   // snapshot uvjeta pri pucanju
+        public AtmosphereModel Atmosphere;  
         public float TimeAlive;
         public Vector3 StartPosition, PrevPosition;
         public GameObject Visual;
@@ -49,7 +51,8 @@ public class BallisticsManager : MonoBehaviour
         {
             TemperatureCelsius = temperatureCelsius,
             PressurePascal = pressurePascal,
-            HumidityPercent = humidityPercent
+            HumidityPercent = humidityPercent,
+            Wind = windMetresPerSecond
         };
 
         Vector3 dir = direction.normalized;
@@ -154,7 +157,7 @@ public class BallisticsManager : MonoBehaviour
         Destroy(marker.GetComponent<Collider>());
         var mr = marker.GetComponent<Renderer>();
         var markerMat = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
-        markerMat.color = p.Data.trailColor;   // oznaka = boja metka
+        markerMat.color = p.Data.trailColor;   /
         mr.material = markerMat;
         _persistent.Add(marker);
 
@@ -164,10 +167,8 @@ public class BallisticsManager : MonoBehaviour
     private void EndProjectile(LiveProjectile p, Vector3 endPoint)
     {
         if (p.Visual != null) Destroy(p.Visual);
-        // trag NAMJERNO ostaje na sceni za usporedbu
     }
 
-    /// <summary>Obriši sve tragove, oznake i aktivne metke (tipka C u demou).</summary>
     public void ClearAll()
     {
         foreach (var p in _active) if (p.Visual != null) Destroy(p.Visual);
