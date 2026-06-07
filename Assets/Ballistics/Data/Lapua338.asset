@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 23af4f65aea779e47af86cf90c797d3c, type: 3}
-  m_Name: M855_5.56mm
+  m_Name: Lapua338
   m_EditorClassIdentifier: Assembly-CSharp::ProjectileData
-  massKilograms: 0.0098
-  diameterMetres: 0.00882
-  muzzleVelocityMs: 853
+  massKilograms: 0.0162
+  diameterMetres: 0.00859
+  muzzleVelocityMs: 905
   dragModel: 1
-  ballisticCoefficient: 0.2
-  trailColor: {r: 0, g: 1, b: 0.09854728, a: 1}
+  ballisticCoefficient: 0.322
+  trailColor: {r: 0, g: 0.063622236, b: 1, a: 1}

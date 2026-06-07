@@ -3,34 +3,33 @@ using UnityEngine.InputSystem;
 
 public class BallisticsDemo : MonoBehaviour
 {
-    [Tooltip("Drag tvoj ProjectileData ScriptableObject ovdje.")]
-    public ProjectileData projectile;
-
-    [Tooltip("Drag tvoj BallisticsManager iz scene ovdje.")]
     public BallisticsManager manager;
-
-    [Tooltip("Drag GameObject 'Shooter' iz scene — odakle leti metak.")]
     public Transform shooter;
+    [Range(-5f, 10f)] public float elevationDegrees = 0f;
 
-    [Tooltip("Visinski kut nagiba pucanja (stupnjevi). 0 = horizontalno.")]
-    [Range(-5f, 10f)]
-    public float elevationDegrees = 0f;
+    [Header("Projektili (tipke 1/2/3)")]
+    public ProjectileData ammoA;   // npr. M855
+    public ProjectileData ammoB;   // npr. M80
+    public ProjectileData ammoC;   // npr. .338 Lapua
+    private ProjectileData _current;
+
+    void Start() => _current = ammoA;
 
     void Update()
     {
-        if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
+        var kb = Keyboard.current;
+        if (kb == null) return;
+
+        if (kb.digit1Key.wasPressedThisFrame && ammoA) _current = ammoA;
+        if (kb.digit2Key.wasPressedThisFrame && ammoB) _current = ammoB;
+        if (kb.digit3Key.wasPressedThisFrame && ammoC) _current = ammoC;
+        if (kb.cKey.wasPressedThisFrame) manager.ClearAll();
+
+        if (kb.spaceKey.wasPressedThisFrame && _current && manager && shooter)
         {
-            if (projectile == null || manager == null || shooter == null)
-            {
-                Debug.LogError("Dodijeli projectile, manager i shooter u Inspectoru!");
-                return;
-            }
-
-            // Smjer s kutem elevacije
-            float radians = elevationDegrees * Mathf.Deg2Rad;
-            Vector3 direction = new Vector3(0, Mathf.Sin(radians), Mathf.Cos(radians));
-
-            manager.Fire(projectile, shooter.position, direction);
+            float rad = elevationDegrees * Mathf.Deg2Rad;
+            Vector3 dir = new Vector3(0, Mathf.Sin(rad), Mathf.Cos(rad));
+            manager.Fire(_current, shooter.position, dir);
         }
     }
 }

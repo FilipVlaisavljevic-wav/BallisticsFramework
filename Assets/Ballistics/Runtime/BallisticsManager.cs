@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class BallisticsManager : MonoBehaviour
 {
-    [Header("Atmosfera")]
+    [Header("Atmosfera (mijenjaj PRIJE pucanja za usporedbu uvjeta)")]
     public float temperatureCelsius = 15f;
     public float pressurePascal = 101325f;
     public float humidityPercent = 50f;
@@ -11,84 +11,84 @@ public class BallisticsManager : MonoBehaviour
     [Header("Simulacija")]
     public float timestep = 0.01f;
     public float maxFlightTime = 30f;
-    public float killAltitudeY = -500f;
+    public float killAltitudeY = -50f;
 
     [Header("Vizualni prikaz")]
-    [Tooltip("Prefab projektila — koristit ćemo sferu. Ako je null, kreirat će se automatski.")]
-    public GameObject projectilePrefab;
-    [Tooltip("Boja trag linije")]
-    public Color trailColor = Color.red;
+    public float bulletRadius = 0.1f;
+    public float trailWidth = 0.05f;
+    public float impactMarkerRadius = 0.15f;
+    public Color impactColor = Color.yellow;
 
-    private AtmosphereModel _atmosphere;
-    private List<LiveProjectile> _active = new List<LiveProjectile>();
+    private readonly List<LiveProjectile> _active = new();
+    private readonly List<GameObject> _persistent = new();   // tragovi + oznake (za Clear)
+    public readonly List<ImpactInfo> Impacts = new();
+
+    public struct ImpactInfo
+    {
+        public string ammo;
+        public float rangeM, dropM, speedMs, energyJ, timeS;
+        public Vector3 point;
+        public bool hitTarget;
+    }
 
     private class LiveProjectile
     {
         public ProjectileState State;
         public ProjectileData Data;
+        public AtmosphereModel Atmosphere;   // snapshot uvjeta pri pucanju
         public float TimeAlive;
-        public GameObject VisualObject;   // 3D kuglica
-        public LineRenderer Trail;          // linija putanje
-        public List<Vector3> TrailPoints;    // povijest pozicija
+        public Vector3 StartPosition, PrevPosition;
+        public GameObject Visual;
+        public LineRenderer Trail;
+        public List<Vector3> TrailPoints;
     }
 
-    void Awake()
+    public void Fire(ProjectileData data, Vector3 position, Vector3 direction)
     {
-        _atmosphere = new AtmosphereModel
+        var atmo = new AtmosphereModel
         {
             TemperatureCelsius = temperatureCelsius,
             PressurePascal = pressurePascal,
             HumidityPercent = humidityPercent
         };
-    }
 
-    public void Fire(ProjectileData data, Vector3 position, Vector3 direction)
-    {
-        // 1. Kreiraj vizualnu kuglicu
-        GameObject visual;
-        if (projectilePrefab != null)
-        {
-            visual = Instantiate(projectilePrefab, position, Quaternion.identity);
-        }
-        else
-        {
-            visual = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            visual.transform.localScale = Vector3.one * 0.1f;
-            visual.transform.position = position;
-            Destroy(visual.GetComponent<SphereCollider>());
+        Vector3 dir = direction.normalized;
+        Vector3 spawn = position + dir * 0.5f;   // ispred cijevi da ne pogodi pucača
 
-            var renderer = visual.GetComponent<Renderer>();
-            renderer.material = new Material(Shader.Find("Standard"));
-            renderer.material.color = Color.red;
-        }
+        var visual = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        visual.name = $"Bullet_{data.name}";
+        visual.transform.localScale = Vector3.one * bulletRadius;
+        visual.transform.position = spawn;
+        Destroy(visual.GetComponent<Collider>());
+        var rend = visual.GetComponent<Renderer>();
+        rend.material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+        rend.material.color = data.trailColor;
 
-        // 2. Kreiraj LineRenderer za trag
         var trailObj = new GameObject($"Trail_{data.name}");
         var trail = trailObj.AddComponent<LineRenderer>();
-        trail.startWidth = 0.05f;
-        trail.endWidth = 0.05f;
-        trail.material = new Material(Shader.Find("Sprites/Default"));
-        trail.startColor = trailColor;
-        trail.endColor = trailColor;
-        trail.positionCount = 0;
+        trail.startWidth = trailWidth; trail.endWidth = trailWidth;
+        var trailMat = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+        trailMat.color = data.trailColor;     
+        trail.material = trailMat;
+        trail.numCapVertices = 2;
+        trail.positionCount = 1;
+        trail.SetPosition(0, spawn);
+        _persistent.Add(trailObj);
 
-        // 3. Dodaj u listu aktivnih projektila
-        var p = new LiveProjectile
+        _active.Add(new LiveProjectile
         {
             Data = data,
-            State = new ProjectileState
-            {
-                Position = position,
-                Velocity = direction.normalized * data.muzzleVelocityMs
-            },
+            Atmosphere = atmo,
+            State = new ProjectileState { Position = spawn, Velocity = dir * data.muzzleVelocityMs },
             TimeAlive = 0f,
-            VisualObject = visual,
+            StartPosition = spawn,
+            PrevPosition = spawn,
+            Visual = visual,
             Trail = trail,
-            TrailPoints = new List<Vector3> { position }
-        };
-        _active.Add(p);
+            TrailPoints = new List<Vector3> { spawn }
+        });
 
-        Debug.Log($"Fire: {data.name} v0={data.muzzleVelocityMs}m/s");
+        Debug.Log($"Fire: {data.name}  v0={data.muzzleVelocityMs}m/s  T={temperatureCelsius}\u00b0C  RH={humidityPercent}%");
     }
 
     void FixedUpdate()
@@ -96,44 +96,97 @@ public class BallisticsManager : MonoBehaviour
         for (int i = _active.Count - 1; i >= 0; i--)
         {
             var p = _active[i];
-            p.State = BallisticsSolver.Step(p.State, timestep, p.Data, _atmosphere);
+            p.PrevPosition = p.State.Position;
+            p.State = BallisticsSolver.Step(p.State, timestep, p.Data, p.Atmosphere);
             p.TimeAlive += timestep;
 
-            // Ažuriraj vizualnu poziciju kuglice
-            p.VisualObject.transform.position = p.State.Position;
+            Vector3 newPos = p.State.Position;
+            Vector3 delta = newPos - p.PrevPosition;
+            float dist = delta.magnitude;
 
-            // Ažuriraj trag svakih ~5 koraka da ne radimo previše točaka
-            if (Mathf.FloorToInt(p.TimeAlive * 100f) % 5 == 0)
+            if (dist > 0f && Physics.Raycast(p.PrevPosition, delta / dist, out RaycastHit hit, dist,
+                                             ~0, QueryTriggerInteraction.Ignore))
             {
-                p.TrailPoints.Add(p.State.Position);
-                p.Trail.positionCount = p.TrailPoints.Count;
-                p.Trail.SetPositions(p.TrailPoints.ToArray());
+                RegisterImpact(p, hit.point, hit.collider);
+                EndProjectile(p, hit.point);
+                _active.RemoveAt(i);
+                continue;
             }
 
-            // Uvjeti uklanjanja
-            if (p.TimeAlive >= maxFlightTime || p.State.Position.y < killAltitudeY)
+            p.Visual.transform.position = newPos;
+            p.TrailPoints.Add(newPos);
+            p.Trail.positionCount = p.TrailPoints.Count;
+            p.Trail.SetPosition(p.TrailPoints.Count - 1, newPos);
+
+            if (p.TimeAlive >= maxFlightTime || newPos.y < killAltitudeY)
             {
-                Destroy(p.VisualObject);
-                Destroy(p.Trail.gameObject, 5f);  // ostavi trag još 5 sekundi za pregled
+                EndProjectile(p, newPos);
                 _active.RemoveAt(i);
             }
         }
     }
 
-    /// <summary>Vrati trenutno aktivni projektil (za UI prikaz).</summary>
+    private void RegisterImpact(LiveProjectile p, Vector3 point, Collider col)
+    {
+        float range = Vector3.Distance(
+            new Vector3(p.StartPosition.x, 0, p.StartPosition.z),
+            new Vector3(point.x, 0, point.z));
+        float drop = p.StartPosition.y - point.y;
+        bool isTarget = col != null && col.name.StartsWith("Target");
+
+        Impacts.Add(new ImpactInfo
+        {
+            ammo = p.Data.name,
+            rangeM = range,
+            dropM = drop,
+            speedMs = p.State.Speed,
+            energyJ = p.State.KineticEnergy(p.Data.massKilograms),
+            timeS = p.TimeAlive,
+            point = point,
+            hitTarget = isTarget
+        });
+
+        var marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        marker.name = $"Impact_{p.Data.name}";
+        marker.transform.localScale = Vector3.one * impactMarkerRadius;
+        marker.transform.position = point;
+        if (col != null) marker.transform.SetParent(col.transform, true);
+        Destroy(marker.GetComponent<Collider>());
+        var mr = marker.GetComponent<Renderer>();
+        var markerMat = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+        markerMat.color = p.Data.trailColor;   // oznaka = boja metka
+        mr.material = markerMat;
+        _persistent.Add(marker);
+
+        Debug.Log($"POGODAK [{p.Data.name}] {(isTarget ? col.name : "tlo")} | domet {range:F1} m | pad {drop:F2} m | v {p.State.Speed:F0} m/s | E {p.State.KineticEnergy(p.Data.massKilograms):F0} J | t {p.TimeAlive:F2} s");
+    }
+
+    private void EndProjectile(LiveProjectile p, Vector3 endPoint)
+    {
+        if (p.Visual != null) Destroy(p.Visual);
+        // trag NAMJERNO ostaje na sceni za usporedbu
+    }
+
+    /// <summary>Obriši sve tragove, oznake i aktivne metke (tipka C u demou).</summary>
+    public void ClearAll()
+    {
+        foreach (var p in _active) if (p.Visual != null) Destroy(p.Visual);
+        _active.Clear();
+        foreach (var go in _persistent) if (go != null) Destroy(go);
+        _persistent.Clear();
+        Impacts.Clear();
+    }
+
     public bool TryGetLatestProjectile(out Vector3 position, out float speed, out float distance)
     {
         if (_active.Count > 0)
         {
-            var p = _active[_active.Count - 1];
-            position = p.State.Position;
-            speed = p.State.Speed;
+            var p = _active[^1];
+            position = p.State.Position; speed = p.State.Speed;
             distance = new Vector3(p.State.Position.x, 0, p.State.Position.z).magnitude;
             return true;
         }
-        position = Vector3.zero;
-        speed = 0;
-        distance = 0;
+        position = Vector3.zero; speed = 0; distance = 0;
         return false;
     }
 }
