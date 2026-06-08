@@ -58,8 +58,6 @@ The framework follows a clear separation of concerns. Three of the five modules 
 
 **Data flow per step:** the projectile speed relative to the air and the speed of sound give the Mach number → `DragModel` returns the reference Cd → with the ballistic coefficient and air density, `BallisticsSolver` computes drag + gravity acceleration and advances the state with RK4. `BallisticsManager` runs this for every active projectile each physics tick.
 
-> An architecture diagram is available in `docs/architecture.png` (Figure 4.1 in the thesis).
-
 ---
 
 ## Quick start
@@ -197,11 +195,6 @@ Not yet implemented; identified as future work:
 
 ---
 
-## License
-
-To be defined by the author (e.g. MIT). The G1/G7 drag tables are derived from publicly available ballistic references.
-
----
 
 ## Author
 
