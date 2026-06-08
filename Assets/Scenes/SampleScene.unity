@@ -820,7 +820,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 587090152}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 1, w: 0}
+  m_LocalRotation: {x: -0, y: -0, z: 1, w: 0}
   m_LocalPosition: {x: 0, y: 1, z: 500}
   m_LocalScale: {x: 1, y: 2, z: 0.2}
   m_ConstrainProportionsScale: 0
@@ -939,10 +939,10 @@ MonoBehaviour:
   ammoB: {fileID: 11400000, guid: 403410bb278b74547a4471b86f87f0bc, type: 2}
   ammoC: {fileID: 11400000, guid: 5d383de3c5a65bf4795bf67e92e8d693, type: 2}
   hipFov: 60
-  adsFov: 18
+  adsFov: 10
   adsSpeed: 12
   gunHipPos: {x: 0.25, y: -0.2, z: 0.5}
-  gunAdsPos: {x: 0, y: -0.1, z: 1}
+  gunAdsPos: {x: 0, y: -2, z: 0}
   muzzleForward: 1
 --- !u!114 &1333166867
 MonoBehaviour:
@@ -1112,8 +1112,8 @@ SceneRoots:
   - {fileID: 74897111}
   - {fileID: 234196925}
   - {fileID: 1590628079}
-  - {fileID: 587090156}
   - {fileID: 1333166865}
   - {fileID: 130957963}
   - {fileID: 569170356}
   - {fileID: 324041904}
+  - {fileID: 587090156}

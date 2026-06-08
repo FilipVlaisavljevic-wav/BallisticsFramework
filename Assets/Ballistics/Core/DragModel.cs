@@ -58,20 +58,13 @@ public static class DragModel
         0.5022f, 0.5016f, 0.5010f, 0.5006f, 0.4998f, 0.4995f, 0.4992f, 0.4990f, 0.4988f
     };
 
-    /// <summary>
-    /// Vraća referentni Cd s linearnom interpolacijom.
-    /// Binarno pretraživanje za pronalazak susjednih točaka u tablici.
-    /// </summary>
     public static float LookupReferenceCd(float mach, DragModelType model)
     {
         float[] machTable = (model == DragModelType.G7) ? G7_Mach : G1_Mach;
         float[] cdTable = (model == DragModelType.G7) ? G7_Cd : G1_Cd;
 
-        // Edge cases
         if (mach <= machTable[0]) return cdTable[0];
         if (mach >= machTable[machTable.Length - 1]) return cdTable[cdTable.Length - 1];
-
-        // Binarno pretraživanje — pronaći lo i hi takve da machTable[lo] <= mach <= machTable[hi]
         int lo = 0, hi = machTable.Length - 1;
         while (hi - lo > 1)
         {
@@ -82,15 +75,11 @@ public static class DragModel
                 hi = mid;
         }
 
-        // Linearna interpolacija između machTable[lo] i machTable[hi]
         float t = (mach - machTable[lo]) / (machTable[hi] - machTable[lo]);
         return Mathf.Lerp(cdTable[lo], cdTable[hi], t);
     }
 
-    /// <summary>
-    /// Brzina zvuka u m/s pri zadanoj temperaturi (Kelvin).
-    /// c = sqrt(γ · R · T), γ=1.4 za zrak, R=287.05 J/(kg·K).
-    /// </summary>
+
     public static float SpeedOfSound(float temperatureKelvin)
     {
         return Mathf.Sqrt(1.4f * 287.05f * temperatureKelvin);

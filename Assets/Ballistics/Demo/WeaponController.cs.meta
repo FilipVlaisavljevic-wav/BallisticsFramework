@@ -1,2 +1,18 @@
 fileFormatVersion: 2
 guid: 461691b55ab6676439df567d36c9175e
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - manager: {instanceID: 0}
+  - controller: {instanceID: 0}
+  - cam: {instanceID: 0}
+  - gunModel: {instanceID: 0}
+  - ammoA: {fileID: 11400000, guid: 67ef758dc2de2224088f42179181af50, type: 2}
+  - ammoB: {fileID: 11400000, guid: 403410bb278b74547a4471b86f87f0bc, type: 2}
+  - ammoC: {fileID: 11400000, guid: 5d383de3c5a65bf4795bf67e92e8d693, type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -29,8 +29,7 @@ public class ReticleHUD : MonoBehaviour
         float cy = Screen.height * 0.5f;
         bool ads = controller != null && controller.isAds;
 
-        if (!ads)
-        {
+
             GUI.color = color;
             DrawBox(cx - thickness * 0.5f, cy - gap - length, thickness, length); // gore
             DrawBox(cx - thickness * 0.5f, cy + gap, thickness, length); // dolje
@@ -39,7 +38,6 @@ public class ReticleHUD : MonoBehaviour
             if (centerDot)
                 DrawBox(cx - dotSize * 0.5f, cy - dotSize * 0.5f, dotSize, dotSize);
             GUI.color = Color.white;
-        }
 
         if (weapon != null)
             GUI.Label(new Rect(20, Screen.height - 28, 380, 25),
