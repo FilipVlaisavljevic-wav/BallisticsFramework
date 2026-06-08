@@ -8,10 +8,10 @@ public class BallisticsDemo : MonoBehaviour
     [Range(-5f, 10f)] public float elevationDegrees = 0f;
 
     [Header("Projektili (tipke 1/2/3)")]
-    public ProjectileData ammoA;   // npr. M855
-    public ProjectileData ammoB;   // npr. M80
-    public ProjectileData ammoC;   // npr. .338 Lapua
-    private ProjectileData _current;
+    public ProjectileData ammoA;   
+    public ProjectileData ammoB;   
+    public ProjectileData ammoC; 
+   private ProjectileData _current;
 
     void Start() => _current = ammoA;
 

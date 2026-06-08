@@ -151,13 +151,13 @@ MonoBehaviour:
   temperatureCelsius: 15
   pressurePascal: 101325
   humidityPercent: 50
+  windMetresPerSecond: {x: 70, y: 0, z: 0}
   timestep: 0.01
   maxFlightTime: 30
   killAltitudeY: -500
   bulletRadius: 0.1
   trailWidth: 0.05
   impactMarkerRadius: 0.15
-  impactColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!4 &74897111
 Transform:
   m_ObjectHideFlags: 0

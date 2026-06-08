@@ -157,7 +157,7 @@ public class BallisticsManager : MonoBehaviour
         Destroy(marker.GetComponent<Collider>());
         var mr = marker.GetComponent<Renderer>();
         var markerMat = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
-        markerMat.color = p.Data.trailColor;   /
+        markerMat.color = p.Data.trailColor;   
         mr.material = markerMat;
         _persistent.Add(marker);
 

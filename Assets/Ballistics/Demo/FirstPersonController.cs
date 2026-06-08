@@ -42,7 +42,7 @@ public class FirstPersonController : MonoBehaviour
         Vector2 d = Mouse.current.delta.ReadValue() * mouseSensitivity * (isAds ? adsSensitivityMultiplier : 1f);
         transform.Rotate(Vector3.up, d.x);                       // yaw na igraču
         _pitch = Mathf.Clamp(_pitch - d.y, -89f, 89f);
-        cameraTransform.localEulerAngles = new Vector3(_pitch, 0f, 0f); // pitch na kameri
+        cameraTransform.localEulerAngles = new Vector3(_pitch, 0f, 0f); 
     }
 
     void Move()
